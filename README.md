@@ -1,6 +1,4 @@
-<p align="center" style="font-size: 40px;  font-weight: bold;">
-  Angular Custom Directives
-</p>
+# <div align="center">Angular Custom Directives</div>
 
 ![Angular Version](https://img.shields.io/badge/angular-17.0.0-red)
 ![License](https://img.shields.io/badge/license-MIT-blue)
@@ -19,7 +17,7 @@ Stay tuned for updates as we continue to add new and useful directives to this r
 
 ## Examples
 
-You can find examples of using these directives in the `src/examples` folder of this repository.
+You can find examples of using these directives in the `src/app/examples` folder of this repository.
 
 ## Contribution
 
