@@ -9,7 +9,7 @@ Welcome to the Angular Custom Directives repository! This repository contains a 
 
 ### Text Formatting Directives
 
-1. [**`Format Case Input`**](./src/app/directives/format-case-input/README.md): This directive automatically formats text input based on different cases such as uppercase, lowercase, snake case, camel case, etc.
+1. [**`Format Case Input`**](./src/app/directives/format-case-input): This directive automatically formats text input based on different cases such as uppercase, lowercase, snake case, camel case, etc.
 
 ### More Directives Coming Soon!
 
