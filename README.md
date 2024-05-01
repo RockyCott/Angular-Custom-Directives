@@ -1,27 +1,26 @@
-# AngularDirectives
+<p align="center" style="font-size: 40px;  font-weight: bold;">
+  Angular Custom Directives
+</p>
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
+![Angular Version](https://img.shields.io/badge/angular-17.0.0-red)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Development server
+Welcome to the Angular Custom Directives repository! This repository contains a collection of custom Angular directives that can be used to enhance and extend the functionality of your Angular applications.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Available Directives
 
-## Code scaffolding
+### Text Formatting Directives
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+1. [**`Format Case Input`**](./src/app/directives/format-case-input/README.md): This directive automatically formats text input based on different cases such as uppercase, lowercase, snake case, camel case, etc.
 
-## Build
+### More Directives Coming Soon!
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Stay tuned for updates as we continue to add new and useful directives to this repository!
 
-## Running unit tests
+## Examples
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+You can find examples of using these directives in the `src/examples` folder of this repository.
 
-## Running end-to-end tests
+## Contribution
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Contributions are welcome! If you have ideas for new directives or improvements to existing ones, feel free to open an issue or submit a pull request.

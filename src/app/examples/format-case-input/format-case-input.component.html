@@ -1,0 +1,153 @@
+<div class="container">
+  <h2 style="text-align: center">Ejemplos de Directiva toFormatCase</h2>
+  <div class="input-group" style="padding: 8px 16px 16px 16px; margin: 0">
+    <label for="upper">Default Text</label>
+    <input type="text" id="upper" toFormatCase="default" [formControl]="text" />
+    <small>Test Text.</small>
+  </div>
+  <div class="row">
+    <div class="column">
+      <div class="example-container">
+        <div class="input-container">
+          <div class="input-group">
+            <label for="upper">Upper Case</label>
+            <input
+              type="text"
+              id="upper"
+              toFormatCase="upper"
+              [value]="text.value"
+              (pasteContent)="pasteContent($event)"
+            />
+            <small>Convierte el texto a mayúsculas.</small>
+          </div>
+          <div class="input-group">
+            <label for="camel">Camel Case</label>
+            <input
+              type="text"
+              id="camel"
+              toFormatCase="camel"
+              [value]="text.value"
+            />
+            <small>Convierte el texto a formato Camel Case.</small>
+          </div>
+          <div class="input-group">
+            <label for="snake">Snake Case</label>
+            <input
+              id="snake"
+              type="text"
+              toFormatCase="snake"
+              [value]="text.value"
+            />
+            <small>Convierte el texto a formato Snake Case.</small>
+          </div>
+          <div class="input-group">
+            <label for="alphanumeric">Alphanumeric</label>
+            <input
+              id="alphanumeric"
+              type="text"
+              toFormatCase="alphanumeric"
+              [value]="text.value"
+            />
+            <small
+              >Mantiene solo las letras, números y espacios del texto.</small
+            >
+          </div>
+          <div class="input-group">
+            <label for="onlylettersandspaces">Only Letters and Spaces</label>
+            <input
+              id="onlylettersandspaces"
+              type="text"
+              toFormatCase="onlylettersandspaces"
+              [value]="text.value"
+            />
+            <small>Mantiene solo las letras y espacios del texto.</small>
+          </div>
+          <div class="input-group">
+            <label for="join">Join (Upper, No Spaces)</label>
+            <input
+              id="join"
+              type="text"
+              toFormatCase="join"
+              joinedFormats="upper,nospaces"
+              [value]="text.value"
+            />
+            <small> Aplica las directivas Upper Case y No Spaces. </small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="example-container">
+        <!-- Agregar un título vacío para igualar la altura -->
+        <div class="input-container">
+          <div class="input-group">
+            <label for="lower">Lower Case</label>
+            <input
+              type="text"
+              id="lower"
+              toFormatCase="lower"
+              [value]="text.value"
+            />
+            <small>Convierte el texto a minúsculas.</small>
+          </div>
+          <div class="input-group">
+            <label for="pascal">Pascal Case</label>
+            <input
+              id="pascal"
+              type="text"
+              toFormatCase="pascal"
+              [value]="text.value"
+            />
+            <small>Convierte el texto a formato Pascal Case.</small>
+          </div>
+          <div class="input-group">
+            <label for="kebab">Kebab Case</label>
+            <input
+              id="kebab"
+              type="text"
+              toFormatCase="kebab"
+              [value]="text.value"
+            />
+            <small> Convierte el texto a formato Kebab Case. </small>
+          </div>
+          <div class="input-group">
+            <label for="nospaces">No Spaces</label>
+            <input
+              id="nospaces"
+              type="text"
+              toFormatCase="nospaces"
+              [value]="text.value"
+            />
+            <small>Elimina los espacios del texto.</small>
+          </div>
+          <div class="input-group">
+            <label for="onlyletters">Only Letters</label>
+            <input
+              id="onlyletters"
+              type="text"
+              toFormatCase="onlyletters"
+              [value]="text.value"
+            />
+            <small>Mantiene solo las letras del texto.</small>
+          </div>
+          <div class="input-group">
+            <label for="join"
+              >Join (Lower, Only Letters and Spaces, Snake Case)</label
+            >
+            <input
+              id="join"
+              type="text"
+              toFormatCase="join"
+              joinedFormats="lower,onlylettersandspaces,snake"
+              [value]="text.value"
+            />
+            <small>
+              Aplica las directivas Lower Case, Only Letters and Spaces with
+              Snake Case.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
