@@ -12,6 +12,7 @@ import {
   forwardRef,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
 /**
  * @description
  * Interfaz para el patrón Memento
@@ -19,6 +20,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 interface Memento {
   value: string;
 }
+
 /**
  * @description
  * Clase que gestiona el historial de cambios
@@ -80,6 +82,7 @@ class HistoryManager {
     }
   }
 }
+
 /**
  * Represents the different types of formatting cases for a string.
  */
@@ -140,10 +143,22 @@ enum FormatCaseTypeAlias {
   Kebab = 'kebab',
 
   /**
-   * Joins the text without any formatting.
+   * Converts the value to number with max decimals.
    */
-  Join = 'join',
+  OnlyNumbers = 'onlynumbers',
+
+  /**
+   * Removes the custom regex from the text.
+   */
+  CustomRegex = 'customregex',
+
+  /**
+   * Joins the text without any formatting.
+   * @deprecated - for backward compatibility only
+   */
+  // Join = 'join',
 }
+
 /**
  * Represents the different formatting case types.
  */
@@ -159,34 +174,56 @@ type FormatCaseType =
   | 'onlyletters'
   | 'onlylettersandspaces'
   | 'kebab'
+  | 'onlynumbers'
+  | 'customregex'
   | 'join';
+
+/**
+ * @description
+ * Represents the parameters for the only numbers format.
+ * @param maxDecimal - Maximum number of decimals.
+ * @param minValue - Minimum value.
+ * @param maxValue - Maximum value.
+ */
+interface OnlyNumberParams {
+  maxDecimals?: number;
+  minValue?: number;
+  maxValue?: number;
+}
+
+enum OnlyNumberParamsAlias {
+  maxDecimals = 'maxDecimals',
+  minValue = 'minValue',
+  maxValue = 'maxValue',
+}
+
 /**
  * @description
  * This directive is used to convert the input field value based on the case type.
  *
  * @example <caption>Basic usage</caption>
  * ```html
- * <input type="text" toUppercase />
+ * <input type="text" toFormatCase="upper" />
  * ```
  * @example <caption>With mat-form-field</caption>
  * ```html
  * <mat-form-field>
  *  <mat-label>Label</mat-label>
- *  <input matInput type="text" toUppercase />
+ *  <input matInput type="text" toFormatCase="upper" />
  * </mat-form-field>
  * ```
  * @example <caption>With reactive forms</caption>
  * ```html
  * <mat-form-field>
  *  <mat-label>Label</mat-label>
- *  <input matInput type="text" formControlName="name" toUppercase />
+ *  <input matInput type="text" formControlName="name" toFormatCase="upper" />
  * </mat-form-field>
  * ```
  * @example <caption>With template driven forms</caption>
  * ```html
  * <mat-form-field>
  *  <mat-label>Label</mat-label>
- *  <input matInput type="text" [(ngModel)]="name" name="name" toUppercase />
+ *  <input matInput type="text" [(ngModel)]="name" name="name" toFormatCase="upper" />
  * </mat-form-field>
  * ```
  * @example
@@ -200,12 +237,7 @@ type FormatCaseType =
  * @example
  * ```html
  * <input toFormatCase="camel" ignoredCharacters="!@#$%" />
- * ```
- * @example
- * ```html
- * <input toFormatCase="join" joinedFormats="upper,nospaces" />
- * ```
- * @default 'default'
+ * @default 'upper'
  * @class FormatCaseInputDirective
  * @version 1.0.0
  */
@@ -226,7 +258,6 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    * @description
    * This input property is used to set the format case of the input field.
    * @param value The value to be updated. The value should be one of the following values:
-   * @see FormatCaseTypeAlias
    * - 'upper' - Converts the text to uppercase.
    * - 'lower' - Converts the text to lowercase.
    * - 'camel' - Converts the text to camel case.
@@ -237,16 +268,50 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    * @example
    * ```html
    * <input toFormatCase="lower" />
+   * Merge multiple formats
+   * <input toFormatCase="upper,snake,nospaces" />
+   * It is applied in the order of the list, so the last one will be the one that is applied last.
+   * 'snake,nospaces' and 'nospaces,snake' are not the same.
    * ```
    * @default 'default'
+   * @type {FormatCaseType}
    */
   @Input('toFormatCase')
-  public get formatCase(): FormatCaseType {
+  public get formatCase(): FormatCaseType[] {
     return this.formatCaseValue;
   }
-  public set formatCase(value: FormatCaseType) {
-    this.formatCaseValue = (value?.toLowerCase()?.trim() ||
-      'default') as FormatCaseType;
+  public set formatCase(value: string) {
+    if (!value) {
+      this.formatCaseValue = [FormatCaseTypeAlias.Default];
+      return;
+    }
+    const trimmedValue = value?.trim()?.toLowerCase() || '';
+    if (trimmedValue.includes('join')) {
+      console.warn(
+        'FormatCaseInputDirective: The join format and joinedFormats property are deprecated. Use toFormatCase instead.'
+      );
+      return;
+    }
+    const formatCaseValues = trimmedValue
+      .split(',')
+      .map((value) => {
+        const newValue = value.trim().toLowerCase() as any;
+        if (Object.values(FormatCaseTypeAlias).includes(newValue)) {
+          return newValue;
+        } else {
+          console.error(
+            `FormatCaseInputDirective: The value '${value}' is not a valid format. The valid values are: ${Object.values(
+              FormatCaseTypeAlias
+            ).join(', ')}.`
+          );
+          return null;
+        }
+      })
+      .filter((format): format is FormatCaseType => format !== null);
+
+    this.formatCaseValue = formatCaseValues.length
+      ? formatCaseValues
+      : [FormatCaseTypeAlias.Default];
   }
 
   /**
@@ -256,19 +321,22 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    * ```html
    * <input joinedFormats="upper,nospaces" />
    * ```
-   * @default [default]
+   * @deprecated Use toFormatCase instead. New format is using e.g. toFormatCase="upper,nospaces"
    */
   @Input()
   public get joinedFormats(): FormatCaseType[] {
     return this.joinedFormatValue;
   }
   public set joinedFormats(value: string) {
-    this.joinedFormatValue = (value
-      ?.split(',')
-      .map((value) => value?.toLowerCase()?.trim()) || []) as FormatCaseType[];
+    if (value) {
+      console.warn(
+        `FormatCaseInputDirective: The join format and joinedFormats property are deprecated. Use toFormatCase instead with the format 'toFormatCase="${value}".`
+      );
+      this.formatCase = value;
+    }
   }
 
-  private joinedFormatValue: FormatCaseType[] = ['default'];
+  private joinedFormatValue: FormatCaseType[] = [FormatCaseTypeAlias.Default];
 
   /**
    * @description
@@ -281,6 +349,63 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    */
   @Input()
   public ignoredCharacters: string = '';
+
+  /**
+   * @description
+   * This input property is used to set the custom regex to be removed from the text.
+   * @example
+   * ```html
+   * <input toFormatCase="customregex" customRegex="^\d+(\.\d{0,3})?$" />
+   * The example above will remove all characters that are not numbers or a dot with up to 3 decimals.
+   * ```
+   */
+  @Input()
+  public customRegex: string = null;
+
+  /**
+   * @description
+   * This input property is used to set the only number params.
+   * @example
+   * ```html
+   * <input toFormatCase="onlynumbers" [onlyNumberParams]="{maxDecimal: 2, minValue: 0, maxValue: 100}" />
+   * ```
+   * @default null
+   */
+  @Input()
+  public get onlyNumberParams(): OnlyNumberParams {
+    return this._onlyNumberParams;
+  }
+  public set onlyNumberParams(settings: OnlyNumberParams) {
+    const keys = Object.keys(settings);
+    if (keys.length) {
+      // verificar si hay alguna key que quizas no existe en OnlyNumberParamsAlias, ya que puede estar mal escrita
+      const invalidKeys = keys.filter(
+        (key) => !Object.keys(OnlyNumberParamsAlias).includes(key)
+      );
+      if (invalidKeys.length) {
+        console.error(
+          `FormatCaseInputDirective: The keys ${invalidKeys.join(
+            ', '
+          )} are not valid. The valid keys are: ${Object.values(
+            OnlyNumberParamsAlias
+          ).join(', ')}.`
+        );
+      }
+      this._onlyNumberParams = {
+        maxDecimals: settings?.maxDecimals,
+        minValue: settings?.minValue,
+        maxValue: settings?.maxValue,
+      };
+    }
+  }
+
+  _onlyNumberParams: OnlyNumberParams = {};
+
+  /**
+   * @description
+   * This input property is used to store the last valid value with custom regex.
+   */
+  private lastValidValueWithCustomRegex: string = '';
 
   /**
    * @description
@@ -297,12 +422,12 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
   /**
    * @description
    * This input property is used to set the format case of the input field.
-   * @default
-   * 'default'
    * withing modify the value of the input field.
+   * @default 'default'
+   * @type {FormatCaseType}
    * @private
    */
-  private formatCaseValue: FormatCaseType = FormatCaseTypeAlias.Default;
+  private formatCaseValue: FormatCaseType[] = [FormatCaseTypeAlias.Default];
 
   /**
    * @description
@@ -331,25 +456,35 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    * @private
    */
   private historyManager = new HistoryManager();
+
+  private readonly specialKeys = Object.freeze([
+    'z',
+    'y',
+    'a',
+    'backspace',
+    'delete',
+  ]);
+
   /**
    * @description
    * This method is used to update the value of the input field.
    * @param value The value to be updated.
    * implements ControlValueAccessorInterface
    */
-  onChange!: (_: any) => void;
+  onChange: (_: any) => void;
   /**
    * @description
    * onTouched method is used to update the touched state of the input field.
    * implements ControlValueAccessorInterface
    */
-  onTouched!: () => void;
+  onTouched: () => void;
 
   constructor(
     @Self() private el: ElementRef,
     private renderer: Renderer2,
     private _cdr: ChangeDetectorRef
   ) {}
+
   ngDoCheck(): void {
     const currentValue = this.el.nativeElement.value;
     if (this.lastValue !== currentValue) {
@@ -372,6 +507,15 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
 
   /**
    * @description
+   * This method is used to call the onTouched method.
+   * @private
+   */
+  callOnTouched() {
+    this.onTouched && this.onTouched();
+  }
+
+  /**
+   * @description
    * This method is used to update the selection of the input field.
    * It sets the selection start and end to the given start position.
    * This method is used to maintain the cursor position while typing.
@@ -385,7 +529,10 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
 
   @HostListener('input', ['$event.target.value'])
   onInput(value: string) {
-    const start = this.el.nativeElement.selectionStart;
+    if (this.isNumberType()) {
+      return;
+    }
+    const start = this.el.nativeElement?.selectionStart;
     const transformedValue = this.transformAndWriteValue(value);
     this.lastValue = transformedValue;
     this.updateSelection(start);
@@ -393,41 +540,77 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
     this.historyManager.saveStateForUndo(transformedValue);
   }
 
-  /**
-   * Transforms the input value based on the specified format case and writes the transformed value.
-   *
-   * @param value - The input value to be transformed.
-   * @returns The transformed value.
-   */
-  private transformAndWriteValue(value: string): string {
-    const transformedValue = this.transformText(value, this.formatCase);
-    this.writeValue(transformedValue);
-    return transformedValue;
-  }
-
   @HostListener('keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    if (this.isNumberType()) {
+      return;
+    }
     if (event?.ctrlKey) {
-      const specialKeys: string[] = ['z', 'y', 'a', 'backspace', 'delete'];
       const lowerCaseKey = event.key?.toLowerCase();
-      if (specialKeys.includes(lowerCaseKey)) {
+      if (this.specialKeys.includes(lowerCaseKey)) {
         event.preventDefault();
-        if (lowerCaseKey === 'z') {
-          const previousState = this.historyManager.undo();
-          this.writeValue(previousState);
-          this.callOnChange(previousState);
-        } else if (lowerCaseKey === 'y') {
-          const nextState = this.historyManager.redo();
-          if (nextState !== null) {
-            this.writeValue(nextState);
-            this.callOnChange(nextState);
-          }
-        } else if (lowerCaseKey === 'a') {
-          this.selectAll();
-        } else if (lowerCaseKey === 'backspace' || lowerCaseKey === 'delete') {
-          this.handleCtrlBackspace();
-        }
+        this.handleSpecialKeys(lowerCaseKey);
       }
+    }
+  }
+
+  /**
+   * @description
+   * This method is used to check if the input field is of type number.
+   * If the input field is of type number, it logs an error message.
+   * @returns boolean - True if the input field is of type number, false otherwise.
+   */
+  private isNumberType(): boolean {
+    if (this.el?.nativeElement?.type === 'number') {
+      console.error(
+        'FormatCaseInputDirective: The number with max decimals format is not compatible with input type="number". Change the input type to "text".'
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * This method is used to undo the last change made to the input value.
+   */
+  private undo(): void {
+    const previousState = this.historyManager.undo();
+    this.writeValue(previousState);
+    this.callOnChange(previousState);
+  }
+
+  /**
+   * This method is used to revert the last change made to the input value.
+   */
+  private redo(): void {
+    const nextState = this.historyManager.redo();
+    if (nextState !== null) {
+      this.writeValue(nextState);
+      this.callOnChange(nextState);
+    }
+  }
+
+  /**
+   * This method is used to handle the special keys like 'z', 'y', 'a', 'backspace', 'delete'.
+   * @param key - The key to be handled
+   */
+  private handleSpecialKeys(key: string): void {
+    switch (key) {
+      case 'z':
+        this.undo();
+        break;
+      case 'y':
+        this.redo();
+        break;
+      case 'a':
+        this.selectAll();
+        break;
+      case 'backspace':
+      case 'delete':
+        this.handleCtrlBackspace();
+        break;
+      default:
+        break;
     }
   }
 
@@ -435,9 +618,7 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
   onBlur() {
     this.activeBlur = true;
     this.activeFocus = false;
-    if (this.isMatInput) {
-      this.onTouched();
-    }
+    this.callOnTouched();
   }
 
   @HostListener('focus', ['$event'])
@@ -449,9 +630,14 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
   @HostListener('paste', ['$event'])
   onPaste(event: ClipboardEvent) {
     event.preventDefault();
+    if (this.isNumberType()) {
+      return;
+    }
     const clipboardData = event.clipboardData || (window as any).clipboardData;
     const pastedText = clipboardData.getData('text');
     const transformedText = this.transformAndWriteValue(pastedText);
+    this.historyManager.saveStateForUndo(transformedText);
+    this.callOnChange(transformedText);
 
     const modifiedEvent = new ClipboardEvent('paste', {
       clipboardData: new DataTransfer(),
@@ -486,13 +672,18 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
   }
 
   /**
-   * @description
-   * This method is used to check if the input field is a mat input field.
-   * @private
-   * @returns boolean
+   * Transforms the input value based on the specified format case and writes the transformed value.
+   *
+   * @param value - The input value to be transformed.
+   * @returns The transformed value.
    */
-  get isMatInput(): boolean {
-    return this.el.nativeElement.classList.contains('mat-mdc-input-element');
+  private transformAndWriteValue(value: string): string {
+    let transformedValue = value;
+    this.formatCase?.forEach((format) => {
+      transformedValue = this.transformText(value, format);
+    });
+    this.writeValue(transformedValue);
+    return transformedValue;
   }
 
   /**
@@ -521,6 +712,7 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
       this.writeValue(newValue);
       this.updateSelection(start);
       this.historyManager.saveStateForUndo(newValue);
+      this.callOnChange(newValue);
     } else {
       // Si no hay selección, eliminar la palabra a la izquierda del cursor
       const currentValue = this.el.nativeElement.value;
@@ -530,6 +722,7 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
       this.writeValue(newValue);
       this.updateSelection(wordStart);
       this.historyManager.saveStateForUndo(newValue);
+      this.callOnChange(newValue);
     }
   }
 
@@ -595,13 +788,11 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
         textTransformed = this.removeDiacritics(text);
         textTransformed = this.toKebabCase(textTransformed);
         break;
-      case FormatCaseTypeAlias.Join:
-        textTransformed = text;
-        this.joinedFormats.forEach((format) => {
-          if (format !== FormatCaseTypeAlias.Join) {
-            textTransformed = this.transformText(textTransformed, format);
-          }
-        });
+      case FormatCaseTypeAlias.OnlyNumbers:
+        textTransformed = this.toOnlyNumbers(text, this.onlyNumberParams);
+        break;
+      case FormatCaseTypeAlias.CustomRegex:
+        textTransformed = this.toValidCustomRegex(text, this.customRegex);
         break;
       case FormatCaseTypeAlias.Default:
         textTransformed = text;
@@ -621,7 +812,6 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
    * @private
    */
   private toCamelCase(text: string): string {
-    // quitar todo caracter especial
     const newWord = text.replace(/[^a-zA-Z0-9]+/g, ' ');
     const words = newWord.trim().split(/\s+/);
     let camelCaseText = '';
@@ -737,6 +927,123 @@ export class FormatCaseInputDirective implements ControlValueAccessor, DoCheck {
   private toKebabCase(text: string): string {
     let textTransformed = this.toSnakeCase(text);
     return textTransformed.replace(/_/g, '-');
+  }
+
+  /**
+   * @description
+   * Converts the text to a number with an optional maximum number of decimals.
+   * @param text - Text to be converted to a number
+   * @param params - Object containing optional maxDecimals, minValue, and maxValue
+   * @returns - Text as a number with a maximum number of decimals
+   */
+  private toOnlyNumbers(text: string, params: OnlyNumberParams): string {
+    if (!text) return '';
+
+    const { maxDecimals, minValue, maxValue } = params || {};
+
+    // Remove non-numeric characters except '.', ',' and '-'
+    text = text.replace(/[^0-9.,-]/g, '');
+    if (!text) return '';
+
+    // Handle negative sign at the beginning
+    if (text.startsWith('-')) {
+      text = `-${text.replace(/-/g, '')}`;
+    }
+
+    if (text === '-') {
+      return text;
+    }
+
+    // Check if maxDecimals is valid
+    if (maxDecimals === null || maxDecimals < 0) {
+      text = text.replace(/[^0-9-]/g, '');
+    }
+
+    const newText = text.replace(/,/g, '.');
+    const [integerPart, decimalPart = ''] = newText.split('.');
+
+    const limitedDecimalPart = decimalPart.slice(
+      0,
+      maxDecimals ?? decimalPart.length
+    );
+
+    let result =
+      integerPart + (limitedDecimalPart.length ? `.${limitedDecimalPart}` : '');
+
+    if (newText?.endsWith('.') && !limitedDecimalPart) {
+      result += '.';
+    }
+
+    const parsedResult = parseFloat(result);
+
+    const validMinValue =
+      minValue !== null ? parseFloat(minValue.toString()) : null;
+    const validMaxValue =
+      maxValue !== null ? parseFloat(maxValue.toString()) : null;
+
+    if (validMinValue !== null) {
+      if (isNaN(parsedResult)) {
+        const firstChar = result.charAt(0);
+        return this.adjustForNegativeZero(firstChar, minValue);
+      }
+      if (parsedResult < validMinValue) {
+        if (maxValue !== null) {
+          if (validMaxValue < validMinValue) {
+            return maxValue.toString();
+          }
+        }
+        return minValue.toString();
+      }
+    }
+
+    if (maxValue !== null) {
+      const newMaxValue = parseFloat(maxValue.toString());
+      if (!isNaN(parsedResult) && parsedResult > newMaxValue) {
+        return maxValue.toString();
+      }
+    }
+    let finalResult: string = parsedResult?.toString() || result;
+
+    if (result?.endsWith('.')) {
+      finalResult += '.';
+    }
+    if (!finalResult.includes('.') && limitedDecimalPart) {
+      finalResult += '.' + limitedDecimalPart;
+    }
+
+    return finalResult;
+  }
+
+  /**
+   * @description
+   * Adjusts for the special case where the result might be "-0".
+   * @param firstChar - First character of the original text
+   * @param minValue - Minimum allowed value
+   * @returns - String representation of the adjusted number
+   */
+  private adjustForNegativeZero(firstChar: string, minValue: number): string {
+    const result = `${firstChar === '-' ? '-' : ''}${minValue}`;
+    return result === '-0' ? '0' : result;
+  }
+
+  /**
+   * @description
+   * This method is used to valid the text with the custom regex.
+   * if the text is valid, it returns the text, otherwise it returns the last valid value.
+   * @param text - Text to be validated
+   * @param regex - Custom regex to be validated
+   * @returns - Valid text
+   */
+  private toValidCustomRegex(text: string, regex: string): string {
+    if (!regex) {
+      return text;
+    }
+    const newRegex = new RegExp(regex);
+    if (newRegex.test(text)) {
+      this.lastValidValueWithCustomRegex = text;
+      return text;
+    }
+    return this.lastValidValueWithCustomRegex || '';
   }
 
   /**
