@@ -38,8 +38,12 @@ La directiva `toFormatCase` acepta los siguientes parámetros:
 
 - `toFormatCase`: Especifica el tipo de formato al que se debe convertir el texto. Puede ser 'upper', 'lower', 'camel', 'snake', entre otros.
 - `ignoredCharacters`: Opcional. Especifica los caracteres que se deben ignorar al formatear el texto.
-- `joinedFormats`: Opcional. Especifica los formatos que se deben aplicar al texto ingresado. Solo se usa cuando el valor de `toFormatCase` es 'join'.
-
+- `joinedFormats`: **Deprecado** - Opcional. Especifica los formatos que se deben aplicar al texto ingresado. Solo se usa cuando el valor de `toFormatCase` es 'join'.
+- `onlyNumberParams`: Opcional. Un objeto que define configuraciones específicas cuando toFormatCase es 'onlynumbers'. Incluye:
+  - maxDecimals: Máximo número de decimales permitidos.
+  - minValue: Valor mínimo permitido.
+  - maxValue: Valor máximo permitido.
+- `customRegex`: Opcional. Expresión regular personalizada que permite eliminar caracteres específicos del texto.
 ## Valores de `toFormatCase`
 
 - **Por defecto**: `toFormatCase="default"`
@@ -53,7 +57,19 @@ La directiva `toFormatCase` acepta los siguientes parámetros:
 - **Solo letras**: `toFormatCase="onlyletters"`
 - **Solo letras y espacios**: `toFormatCase="onlylettersandspaces"`
 - **KebabCase**: `toFormatCase="kebab"`
-- **Join**: `toFormatCase="join"` 
+- **Join**: `toFormatCase="join"`
+- **Solo números**: `toFormatCase="onlynumbers"`
+- **Expresión regular personalizada**: `toFormatCase="customregex"` **(En progreso)**
+
+### Ejemplo con onlynumbers y customregex
+
+```html
+<!-- Campo de texto que solo acepta números con un máximo de 2 decimales -->
+<input type="text" toFormatCase="onlynumbers" [onlyNumberParams]="{ maxDecimals: 2, minValue: 0, maxValue: 100 }" />
+
+<!-- Campo de texto que elimina caracteres según una expresión regular personalizada -->
+<input type="text" toFormatCase="customregex" [customRegex]="[^a-zA-Z0-9]" />
+```
 
 ### Format Join
 
